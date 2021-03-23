@@ -2,13 +2,27 @@
 package Code;
 
 import java_cup.runtime.Symbol;
-
+import java.util.ArrayList;
 parser code
 {:
     private Symbol s;
+
+    ArrayList<String> ErrorArray = new ArrayList();
     
-    public void syntax_error(Symbol s){
-        this.s = s;
+    public void syntax_error(Symbol sim){
+        this.s = sim;
+        ErrorArray.add (" \n ERROR IN  Line: " + (s.right + 1) + " Column: " + (s.left + 1) + ", Unexpected:  \"" + s.value + "\" "+ "\n" );
+        System.out.print(" \n ERROR IN  Line: " + (s.right + 1) + " Column: " + (s.left + 1) + ", Unexpected:  \"" + s.value + "\" ");
+    }
+    
+    public void unrecover(Symbol sim){
+        this.s = sim;
+        //ErrorArray.add (" \n  ERROR IMPOSIBLE TO REPAIR IN  Line: " + (s.right + 1) + " Column: " + (s.left + 1) + ", Unexpected:  \"" + s.value + "\" "+ "\n" );
+        System.out.print(" \n ERROR IMPOSIBLE TO REPAIR IN  Line: " + (s.right + 1) + " Column: " + (s.left + 1) + ", Unexpected:  \"" + s.value + "\" ");
+    }
+
+    public ArrayList<String> errrorslist(){
+        return this.ErrorArray;
     }
 
     public Symbol getS(){
@@ -17,30 +31,341 @@ parser code
 :};
 
 //---------------------------------------------------- TERMINALES ------------------------------------------------------------------
-terminal Linea, Comillas, Igual, Suma, Resta, Multiplicacion, Division, Op_logico, Op_relacional,
-    Op_atribucion, Op_incremento, Op_booleano, Parentesis_a, Parentesis_c,
-    Llave_a, Llave_c, Corchete_a, Corchete_c, Main,Next,Then,Sub,End,Dim,As,Public,
-    Module,Console,WriteLine,ReadLine,Return,Class,Function,Structure, P_coma, Identificador, Numero,  ERROR;
+terminal Igual, Suma, Resta, Multiplicacion, Division, Op_relacional,
+         Op_booleano, Parentesis_a, Parentesis_c, Logicos, Step, Byval,NextI ,
+         Punto, Main,Next,Then,Sub,End,Dim,As,Public,To,
+         Module,Console,WriteLine,ReadLine,Return,Function,Structure,Texto, Coma, Identificador, Numero,  ERROR;
 //Tipos
 terminal Int,Cadena,Doub, Bool;
 //Ciclos, if
-terminal If, Else, Do, While, For;
+terminal If, Else, ElseIf, Do, While,Loop , For;
 
 //----------------------------------------------------NO TERMINALES------------------------------------------------------------------
 //Module
-non terminal INICIO, CUERPOMODULE, MAINSENTENCE, CUERPOMAIN, FINMAIN, CUERPOMODULE_PRIMA, FINMODULE ;
+non terminal INICIO, CUERPOMODULE, MAINSENTENCE, CUERPOMAIN, CUERPOMODULE_PRIMA, FINMODULE, CONSOLLOG, CONSOLLOG_PRIMA ;
+
+//Structure
+non terminal STRUCTURESTM, CUERPOSTRUCTURE, VARIABLESTRUCTURE ;
+
 //Variables
-non terminal VARIABLE, VARIABLENUM, VARIABLEBOOL ;
+non terminal VARIABLE, VARIABLENUM, VARIABLEBOOL, PARAMETROS ;
+
+//Funciones Y Procedimientos
+non terminal FUNCTIONSTM, CUERPOFUNCTION,FUNCTIONCALL,PROCEDURESTM , CUERPOPROCEDURE ;
+
+//Ciclos Y Condiciones
+non terminal IFSTM, CUERPOIF, CUERPOELSIF,ELSEIFSENTENCIA, CUERPOELSE;
+non terminal FORSTM, CUERPOFOR, FINFOR, FORSTM_PRIMA;
+non terminal DOWHILESTM, CUERPOWHILE;
 
 //Tools
-non terminal TIPODEDATO;
+non terminal TIPODEDATO, TIPODEDATO_NUM, Op_Matematico, OPERACIONES, RELACIONALES, CONDICION, RETURNST,OPERACIONESCOMPLEJAS, ARGUMENTO;
 
 
 start with INICIO;
 
+
 INICIO ::= 
-    Public Module Identificador |
-    Module Identificador 
+  Public Module Identificador CUERPOMODULE  |
+  Module Identificador CUERPOMODULE
 ;
 
+/*------------------------------------------------------Module Y Main -------------------------------------------------------------*/
+
+
+
+CUERPOMODULE ::=
+    VARIABLE CUERPOMODULE|
+    PROCEDURESTM CUERPOMODULE |
+    FUNCTIONSTM CUERPOMODULE |
+    FUNCTIONCALL CUERPOMODULE |
+    STRUCTURESTM CUERPOMODULE |
+    MAINSENTENCE |
+    error MAINSENTENCE
+  
+;
+
+MAINSENTENCE ::=
+    Public Sub Main Parentesis_a Parentesis_c CUERPOMAIN  |
+    Sub Main Parentesis_a Parentesis_c CUERPOMAIN |
+    error CUERPOMAIN 
+   
+ ;
+
+ CUERPOMAIN ::=
+    VARIABLE CUERPOMAIN  |
+    FORSTM CUERPOMAIN |
+    IFSTM CUERPOMAIN |
+    FUNCTIONCALL CUERPOMAIN |
+    CONSOLLOG CUERPOMAIN |
+    DOWHILESTM  CUERPOMAIN |
+    FUNCTIONSTM CUERPOMAIN |
+    End Sub CUERPOMODULE_PRIMA 
+ ;
+
+ 
+
+
+
+CUERPOMODULE_PRIMA ::=
+    VARIABLE CUERPOMODULE_PRIMA|
+    FORSTM CUERPOMODULE_PRIMA |
+    PROCEDURESTM CUERPOMODULE_PRIMA |
+    IFSTM CUERPOMODULE_PRIMA |
+    DOWHILESTM CUERPOMODULE_PRIMA |
+    FUNCTIONSTM CUERPOMODULE_PRIMA |
+    STRUCTURESTM CUERPOMODULE_PRIMA |
+    FINMODULE |
+    error FINMODULE
+;
+
+FINMODULE ::=
+    End Module |
+    error
+;
+
+CONSOLLOG ::=
+    Console Punto WriteLine Parentesis_a CONSOLLOG_PRIMA  Parentesis_c  |
+    Console Punto ReadLine Parentesis_a Parentesis_c 
+;
+
+CONSOLLOG_PRIMA ::=
+    Texto |
+    Identificador |
+    Texto Suma CONSOLLOG_PRIMA |
+    Identificador Suma CONSOLLOG_PRIMA
+;
+
+/*----------------------------------------------------- Structure -------------------------------------------------------------*/
+STRUCTURESTM ::=
+    Structure Identificador CUERPOSTRUCTURE |
+    Public Structure Identificador CUERPOSTRUCTURE
+;
+
+CUERPOSTRUCTURE ::=
+    PROCEDURESTM CUERPOSTRUCTURE |
+    VARIABLESTRUCTURE CUERPOSTRUCTURE |
+    End Structure
+;
+
+// Variables
+
+VARIABLESTRUCTURE ::=
+    Public Identificador As Cadena |
+    Public Identificador As Bool |
+    Public Identificador As TIPODEDATO_NUM |
+    Public Identificador As TIPODEDATO_NUM Igual OPERACIONESCOMPLEJAS |
+    Public Identificador As Cadena Igual Texto |
+    Public Identificador As Bool Igual Op_booleano 
+;
+
+VARIABLE ::=
+    Dim Identificador As Cadena |
+    Dim Identificador As Cadena Igual Texto |
+    Dim Identificador As Cadena Igual  Console Punto ReadLine Parentesis_a Parentesis_c |
+    Dim Identificador As Cadena Igual  FUNCTIONCALL |
+    VARIABLENUM | 
+    VARIABLEBOOL
+;
+
+VARIABLENUM ::=
+    Dim Identificador As Int |
+    Dim Identificador As Int Igual Numero |
+    Dim Identificador As Int Igual Numero Op_Matematico OPERACIONESCOMPLEJAS |
+    Dim Identificador As Int Igual Console Punto ReadLine Parentesis_a Parentesis_c |
+    Dim Identificador As Doub |
+    Dim Identificador As Doub Igual Numero Op_Matematico OPERACIONESCOMPLEJAS |
+    Dim Identificador As Doub Igual Console Punto ReadLine Parentesis_a Parentesis_c |
+    Dim Identificador As Doub Igual Numero 
+;
+
+VARIABLEBOOL ::=
+    Dim Identificador As Bool Igual Op_booleano|
+    Dim Identificador As Bool 
+;
+
+PARAMETROS ::= 
+    Byval Identificador As TIPODEDATO  |
+    Identificador As TIPODEDATO   |
+    Byval Identificador As TIPODEDATO Coma PARAMETROS |
+    Identificador As TIPODEDATO Coma PARAMETROS
+  
+ ;
+/*------------------------------------------------------Functios Procedimientos -------------------------------------------------------------*/
+FUNCTIONSTM ::=
+    Function Identificador Parentesis_a PARAMETROS Parentesis_c As TIPODEDATO CUERPOFUNCTION |
+    Function Identificador Parentesis_a  Parentesis_c As TIPODEDATO CUERPOFUNCTION |
+    Public Function Identificador Parentesis_a PARAMETROS  Parentesis_c As TIPODEDATO CUERPOFUNCTION
+;
+
+CUERPOFUNCTION ::=
+    VARIABLE CUERPOFUNCTION|
+    FORSTM CUERPOFUNCTION |
+    IFSTM CUERPOFUNCTION |
+    DOWHILESTM CUERPOFUNCTION |
+    Return RETURNST CUERPOFUNCTION |
+    End Function 
+;
+
+FUNCTIONCALL ::= 
+    Identificador Parentesis_a ARGUMENTO Parentesis_c |
+    Identificador Parentesis_a  Parentesis_c
+;
+
+PROCEDURESTM ::=
+    Public Sub Identificador Parentesis_a PARAMETROS Parentesis_c CUERPOPROCEDURE  |
+    Sub Identificador Parentesis_a PARAMETROS Parentesis_c  CUERPOPROCEDURE |
+     Public Sub Identificador Parentesis_a  Parentesis_c CUERPOPROCEDURE  |
+    Sub Identificador Parentesis_a  Parentesis_c  CUERPOPROCEDURE
+;
+
+CUERPOPROCEDURE ::=
+    VARIABLE CUERPOPROCEDURE |
+    FORSTM CUERPOPROCEDURE |
+    IFSTM CUERPOPROCEDURE |
+    DOWHILESTM CUERPOPROCEDURE |
+    End Sub 
+;
+
+
+/*------------------------------------------------------Ciclos Y Condiciones-------------------------------------------------------------*/
+// IF
+IFSTM ::=
+    If CONDICION Then CUERPOIF
+;
+
+CUERPOIF ::=
+    VARIABLE CUERPOIF |
+    FORSTM CUERPOIF|
+    IFSTM CUERPOIF |
+    ElseIf  ELSEIFSENTENCIA |
+    Else CUERPOELSE |
+    CONSOLLOG CUERPOIF |
+    DOWHILESTM CUERPOIF |
+    End If
+
+;
+ELSEIFSENTENCIA::=
+    CONDICION Then CUERPOELSIF
+;
+CUERPOELSIF ::=
+    VARIABLE CUERPOELSIF |
+    IFSTM CUERPOELSIF |
+    FORSTM CUERPOELSIF |
+    Else CUERPOELSE |
+    ElseIf  ELSEIFSENTENCIA |
+    CONSOLLOG CUERPOELSIF |
+    DOWHILESTM CUERPOELSIF |
+    End If
+;
+
+CUERPOELSE ::=
+    VARIABLE CUERPOELSE |
+    IFSTM CUERPOELSE |
+    FORSTM CUERPOELSE |
+    CONSOLLOG CUERPOELSE |
+    DOWHILESTM CUERPOELSE |
+    End If
+;
+//For
+FORSTM ::= 
+    For Identificador As TIPODEDATO_NUM Igual Numero To Numero FORSTM_PRIMA |
+    For Identificador Igual Numero To Numero FORSTM_PRIMA 
+;
+
+FORSTM_PRIMA ::=
+    Step Numero CUERPOFOR |
+    CUERPOFOR
+;
+
+CUERPOFOR ::=
+    VARIABLE CUERPOFOR |
+    FORSTM CUERPOFOR |
+    IFSTM CUERPOFOR |
+    CONSOLLOG CUERPOFOR |
+    DOWHILESTM CUERPOFOR |
+    FINFOR
+;
+
+FINFOR ::=
+    NextI |
+    Next
+;
+// While 
+DOWHILESTM ::=
+    Do While CONDICION CUERPOWHILE |
+    Do CUERPOWHILE While CONDICION
+;
+
+CUERPOWHILE ::=
+    VARIABLE CUERPOWHILE |
+    FORSTM CUERPOWHILE |
+    IFSTM CUERPOWHILE |
+    CONSOLLOG CUERPOWHILE |
+    DOWHILESTM CUERPOWHILE |
+    Loop
+;
+
+/*----------------------------------------------------  Tools -------------------------------------------------------------*/
+TIPODEDATO ::= 
+    Int|
+    Cadena|
+    Doub|
+    Bool
+;
+TIPODEDATO_NUM ::= 
+    Int|
+    Doub
+;
+Op_Matematico ::=
+    Suma|
+    Resta|
+    Multiplicacion|
+    Division
+;
+ OPERACIONES ::= 
+     Numero Op_Matematico OPERACIONES |
+     Numero |
+     Identificador Op_Matematico OPERACIONES |
+     Identificador
+; 
+
+OPERACIONESCOMPLEJAS ::= 
+    Parentesis_a OPERACIONES Parentesis_c |
+    Parentesis_a OPERACIONES Parentesis_c Op_Matematico OPERACIONESCOMPLEJAS |
+    OPERACIONES
+;
+
+// Parentesis_a OPERACIONESCOMPLEJAS Parentesis_c |
+//  OPERACIONES  Op_Matematico  OPERACIONESCOMPLEJAS | 
+
+RELACIONALES ::=
+    Op_relacional |
+    Igual
+;
+
+RETURNST ::=
+    OPERACIONESCOMPLEJAS |
+    Texto
+
+;
+ARGUMENTO ::=
+    Identificador |
+    Numero |
+    Identificador Coma ARGUMENTO |
+    Numero Coma ARGUMENTO |
+    Texto Coma ARGUMENTO |
+    Texto
+;
+CONDICION ::=
+    Identificador RELACIONALES Identificador |
+    Identificador RELACIONALES Identificador Logicos CONDICION |
+    Op_booleano |
+    Identificador Igual Op_booleano |
+    Identificador RELACIONALES Numero Logicos CONDICION |
+    Numero RELACIONALES Identificador Logicos CONDICION |
+    Identificador RELACIONALES Numero |
+    Numero RELACIONALES Identificador |
+    Numero RELACIONALES Numero
+;
 

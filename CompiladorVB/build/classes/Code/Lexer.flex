@@ -3,9 +3,11 @@ import static Code.Tokens.*;
 %%
 %class Lexer
 %type Tokens
+%ignorecase
 L=[a-zA-Z_]+
 D=[0-9]+
 espacio=[ ,\t,\r,\n]+
+Texto = (\").+(\")
 %{
     public String lexeme;
 %}
@@ -32,19 +34,22 @@ espacio=[ ,\t,\r,\n]+
 ( String ) {lexeme=yytext(); return Cadena;}
 
 /* Palabra reservada If */
-( if ) {lexeme=yytext(); return If;}
+( If ) {lexeme=yytext(); return If;}
 
 /* Palabra reservada Else */
-( else ) {lexeme=yytext(); return Else;}
+( Else ) {lexeme=yytext(); return Else;}
 
 /* Palabra reservada Do */
-( do ) {lexeme=yytext(); return Do;}
+( Do ) {lexeme=yytext(); return Do;}
 
 /* Palabra reservada While */
-( while ) {lexeme=yytext(); return While;}
+( While ) {lexeme=yytext(); return While;}
+
+/* Palabra reservada Loop */
+( Loop ) {lexeme=yytext(); return Loop;}
 
 /* Palabra reservada For */
-( for ) {lexeme=yytext(); return For;}
+( For ) {lexeme=yytext(); return For;}
 
 /* Operador Igual */
 ( "=" ) {lexeme=yytext(); return Igual;}
@@ -77,15 +82,31 @@ espacio=[ ,\t,\r,\n]+
 /* Parentesis de cierre */
 ( ")" ) {lexeme=yytext(); return Parentesis_c;}
 
+/* Llave de apertura */
+( "{" ) {lexeme=yytext(); return Llave_a;}
+
+/* Llave de cierre */
+( "}" ) {lexeme=yytext(); return Llave_c;}
+
+/* Corchete de apertura */
+( "[" ) {lexeme=yytext(); return Corchete_a;}
+
+/* Corchete de cierre */
+( "]" ) {lexeme=yytext(); return Corchete_c;}
+
+/* Punto */
+( "." ) {lexeme=yytext(); return Punto;}
+ 
 //Palabras Reservadas
 ( "Main" ) {lexeme=yytext(); return Main;}
 ( "Next" ) {lexeme=yytext(); return Next;}
-( "then" ) {lexeme=yytext(); return Then;}
+( "Then" ) {lexeme=yytext(); return Then;}
 ( "Sub" ) {lexeme=yytext(); return Sub;}
 ( "End" ) {lexeme=yytext(); return End;}
 ( "Dim" ) {lexeme=yytext(); return Dim;}
 ( "As" ) {lexeme=yytext(); return As;}
 ( "public" ) {lexeme=yytext(); return Public;}
+( "To" ) {lexeme=yytext(); return To;}
 ( "Module" ) {lexeme=yytext(); return Module;}
 ( "Console" ) {lexeme=yytext(); return Console;}
 ( "WriteLine" ) {lexeme=yytext(); return WriteLine;}
@@ -94,6 +115,10 @@ espacio=[ ,\t,\r,\n]+
 ( "class" ) {lexeme=yytext(); return Class;}
 ( "Function" ) {lexeme=yytext(); return Function;}
 ( "Structure" ) {lexeme=yytext(); return Structure;}
+("Elseif") {lexeme = yytext(); return ElseIf;}
+
+/* Texto */
+{Texto} {lexeme=yytext(); return Texto;}
 
 /* Punto y coma */
 ( ";" ) {lexeme=yytext(); return P_coma;}
